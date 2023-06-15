@@ -3,13 +3,19 @@ package com.sixlens.project.webank.app;
 
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
+import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.SftpException;
 import com.sixlens.project.webank.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.mail.MessagingException;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.*;
 
 /**
  * @ClassName: WebankDataExportApp
@@ -29,72 +35,124 @@ public class WebankDataExportApp {
         Date date = new Date();
         String batchDate = DateUtil.format(date, "yyyyMMdd");
 
-        System.out.println(batchDate);
 
         // 获取到需要处理的表
         List<String> tablesToExport = DatabaseUtils.getTablesToExport();
 
-        for (String table : tablesToExport) {
-            System.out.println(table);
-        }
+//        for (String table : tablesToExport) {
+//            System.out.println(table);
+//        }
 
-        System.out.println();
 
+        // int numberOfThreads = tablesToExport.size() > 0 ? tablesToExport.size() : 1;
+        int numberOfThreads = Runtime.getRuntime().availableProcessors() * 2;
+        ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads);
+
+        List<Future<File>> futureList = new ArrayList<>();
 
         if (tablesToExport.size() == 0) {
             logger.info("没有需要处理的表");
         } else {
 
-            File[] sourceFiles = null;
-
             for (String tableName : tablesToExport) {
-                // 判断表是否真实存在
-                if (DatabaseUtils.ifTableExist(tableName)) {
+                futureList.add(executorService.submit(new TableProcessor(tableName, batchDate)));
+            }
+        }
 
-                    // 日志记录，记录到底是哪张表被处理
-                    logger.info("被处理的表为： {} ", tableName);
-                    // 数据转换导出 OceanBase(129) -> Linux(138) 按照微众企同⼤数据外部数据源对接规范V1要求转换成textfile格式，原始文件保留一份
+
+        executorService.shutdown();
+
+        try {
+            if (!executorService.awaitTermination(60, TimeUnit.MINUTES)) ;
+            {
+                executorService.shutdownNow();
+                logger.warn("线程池未正常关闭");
+            }
+        } catch (InterruptedException e) {
+            executorService.shutdownNow();
+            logger.warn("线程池关闭异常", e);
+        }
+
+
+        try {
+            if (!executorService.awaitTermination(60, TimeUnit.MINUTES)) {
+                executorService.shutdownNow();
+                logger.warn("线程池未正常关闭");
+            }
+        } catch (InterruptedException e) {
+            executorService.shutdownNow();
+            logger.warn("线程池关闭异常", e);
+        }
+
+
+
+        List<File> encryptedFiles = new ArrayList<>();
+        for (Future<File> future : futureList) {
+            try {
+                encryptedFiles.add(future.get());
+            } catch (InterruptedException | ExecutionException e) {
+                logger.error("获取加密文件时出现异常", e);
+            }
+        }
+
+        String compressedFileName = "/data/cwy/" + batchDate + "/data." + batchDate + ".pkg.tar.gz";
+        CompressUtils.compressFiles(encryptedFiles.toArray(new File[0]), compressedFileName);
+
+        File compressedTableFile = new File(compressedFileName);
+        String remotePath = "/files/" + batchDate;
+
+        SftpUtils.uploadFile(compressedTableFile, remotePath);
+        logger.info("批次 {} 上传至sftp成功", batchDate);
+
+        String finishFileName = "data." + batchDate + ".finish";
+        File finishFile = FileUtil.touch(finishFileName);
+        SftpUtils.uploadFile(finishFile, remotePath);
+
+        EmailUtils.sendNotificationEmail(batchDate);
+        logger.info("提醒邮件发送成功");
+    }
+
+    static class TableProcessor implements Callable<File> {
+
+        private String tableName;
+        private String batchDate;
+
+        TableProcessor(String tableName, String batchDate) {
+            this.tableName = tableName;
+            this.batchDate = batchDate;
+        }
+
+
+        /**
+         * @Description //TODO 将这些加密文件收集到一个列表中
+         * @Author cwy
+         * @Date 2023/6/15 0015
+         * @Param
+         * @return java.io.File
+         **/
+        @Override
+        public File call() throws Exception {
+
+            File encryptedTableFile = null;
+            try {
+                if (DatabaseUtils.ifTableExist(tableName)) {
+                    logger.info("被处理的表为： {}", tableName);
                     File tableFile = ExportUtils.exportTableToTextFile(tableName, batchDate);
 
-                    // 数据加密，按照微众企同⼤数据外部数据源对接规范V1要求加密
                     String encryptedFilePath = tableFile.getParent() + File.separator + "encrypted_" + tableFile.getName();
-
-                    File encryptedTableFile = EncryptUtils.encryptFile(tableFile.getAbsolutePath(), encryptedFilePath);
-                    logger.info("被加密的表为： {} ", tableName);
+                    encryptedTableFile = EncryptUtils.encryptFile(tableFile.getAbsolutePath(), encryptedFilePath);
+                    logger.info("被加密的表为： {}", tableName);
 
                     DatabaseUtils.updateExportLogTaskStatus(tableName);
                     logger.info("表 {} 日志表 bank_status 字段置为“1”.", tableName);
-
-
-                    sourceFiles = new File[]{encryptedTableFile};
                 } else {
-                    // 日志记录
-                    logger.warn("表 {} 并不真实存在于(129) Mysql 的 dw 数据库", tableName);
+                    logger.warn("表 {} 并不真实存在于(129) Mysql 的dw数据库", tableName);
                 }
+            } catch (Exception e) {
+                logger.error("处理表 {} 时出现异常", tableName, e);
             }
-
-            // 数据压缩，按照微众企同⼤数据外部数据源对接规范V1要求压缩
-            String compressedFileName = "data." + batchDate + ".pkg.tar.gz";
-
-            CompressUtils.compressFiles(sourceFiles, compressedFileName);
-
-            File compressedTableFile = new File(compressedFileName);
-
-            // 数据上传至sftp服务器，按照微众企同⼤数据外部数据源对接规范V1要求上传
-            String remotePath = "/files/" + batchDate;
-            SftpUtils.uploadFile(compressedTableFile, remotePath);
-
-            // 生成空文件，文件完整性校验机制:六棱镜生成{数据包名}.{yyyymmdd}.finish的空文件以标识文件处理完毕；
-            String finishFileName = "data." + batchDate + ".finish";
-            File finishFile = FileUtil.touch(finishFileName);
-            SftpUtils.uploadFile(finishFile, remotePath);
-            logger.info("批次 {} 上传至sftp成功", batchDate);
-
-            // 邮件提醒
-            EmailUtils.sendNotificationEmail(batchDate);
-            logger.info("邮件发送成功");
+            return encryptedTableFile;
         }
-
     }
 
 }

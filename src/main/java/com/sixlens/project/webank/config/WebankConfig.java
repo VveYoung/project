@@ -5,7 +5,7 @@ package com.sixlens.project.webank.config;
  * @Description: //TODO 
  * @Author: cwy
  * @Date: 2023/6/12 0012 
- * @Version: 1.0
+ * @Version: 2.0
  */
 public class WebankConfig {
 

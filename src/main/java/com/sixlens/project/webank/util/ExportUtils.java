@@ -27,7 +27,7 @@ public class ExportUtils {
     private static final String LINE_SEPARATOR = "\n";
 
     // 分页查询的每页大小
-    private static final int PAGE_SIZE = 60000;
+    private static final int PAGE_SIZE = 80000;
 
 
     /**
@@ -53,7 +53,7 @@ public class ExportUtils {
             }
         } catch (IOException e) {
             // e.printStackTrace();
-            logger.error("操作目录，报错信息为：{}", e.getMessage());
+            logger.error("操作目录，报错信息为：{}", e);
         }
 
         // 创建输出文件

@@ -61,7 +61,7 @@ public class EncryptUtils {
             e.printStackTrace();
         } catch (NoSuchProviderException e) {
             // e.printStackTrace();
-            logger.error("生成密钥，报错信息为：" + e.getMessage());
+            logger.error("生成密钥，报错信息为：" + e);
         }
         return kg.generateKey().getEncoded();
     }
@@ -82,7 +82,7 @@ public class EncryptUtils {
             cipher.init(mode, sm4Key);
         } catch (Exception e) {
             // e.printStackTrace();
-            logger.error("生成 Cipher对象，报错信息为：" + e.getMessage());
+            logger.error("生成 Cipher对象，报错信息为：" + e);
         }
         return cipher;
     }
@@ -110,7 +110,7 @@ public class EncryptUtils {
 
             IoUtil.close(cipherInputStream);
         } catch (Exception e) {
-            logger.error("加密文件时，报错信息为：" + e.getMessage());
+            logger.error("加密文件时，报错信息为：" + e);
         }
         return file;
     }

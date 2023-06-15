@@ -31,6 +31,7 @@ public class SftpUtils {
         return channel;
     }
 
+
     public static void uploadFile(File file, String remotePath) throws SftpException, FileNotFoundException, JSchException {
 
         ChannelSftp channel = getSftpChannel();

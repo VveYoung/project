@@ -56,7 +56,7 @@ public class DatabaseUtils {
             // 若此处使用druid连接池技术，存在bug
             dataSource = BasicDataSourceFactory.createDataSource(props);
         } catch (Exception e) {
-            logger.error("创建 dbcp 数据池失败， 报错信息为： {}", e.getMessage());
+            logger.error("创建 dbcp 数据池失败， 报错信息为： {}", e);
             e.printStackTrace();
         }
     }
@@ -75,7 +75,7 @@ public class DatabaseUtils {
         } catch (SQLException e) {
             e.printStackTrace();
             // 日志打印
-            logger.error("获取数据库连接失败，报错信息为 {}。", e.getMessage());
+            logger.error("获取数据库连接失败，报错信息为 {}。", e);
         }
         return null;
     }
@@ -119,7 +119,7 @@ public class DatabaseUtils {
 
         } catch (Exception e) {
             // e.printStackTrace();
-            logger.error("错误sql {} {}。", sql, e.getMessage());
+            logger.error("错误sql {} {}。", sql, e);
         } finally {
             release(conn, ps, rs);
         }
@@ -151,7 +151,7 @@ public class DatabaseUtils {
             ps.execute();
         } catch (SQLException e) {
             // e.printStackTrace();
-            logger.info("sql语句: {} 执行失败，报错信息为： {}", sql, e.getMessage());
+            logger.info("sql语句: {} 执行失败，报错信息为： {}", sql, e);
         } finally {
             release(conn, ps);
         }
@@ -182,7 +182,7 @@ public class DatabaseUtils {
             }
         } catch (Exception e) {
             // e.printStackTrace();
-            logger.info("表 {} (129)Mysql的dw数据库中并不存在，报错信息为： {}", tableName, e.getMessage());
+            logger.info("表 {} (129)Mysql的dw数据库中并不存在，报错信息为： {}", tableName, e);
         } finally {
             release(conn, ps, rs);
         }
@@ -207,7 +207,7 @@ public class DatabaseUtils {
         } catch (Exception e) {
             e.printStackTrace();
             // 打印日志
-            logger.error("异常信息为：" + e.getMessage());
+            logger.error("异常信息为：" + e);
         }
         try {
             if (conn != null) {
@@ -216,7 +216,7 @@ public class DatabaseUtils {
         } catch (Exception e) {
             // e.printStackTrace();
             // 打印日志
-            logger.error("异常信息为：" + e.getMessage());
+            logger.error("异常信息为：" + e);
         }
 
     }
@@ -231,7 +231,7 @@ public class DatabaseUtils {
         } catch (Exception e) {
             // e.printStackTrace();
             // 日志打印
-            logger.error("异常信息为：" + e.getMessage());
+            logger.error("异常信息为：" + e);
         }
         try {
             if (stmt != null) {
@@ -240,7 +240,7 @@ public class DatabaseUtils {
         } catch (Exception e) {
             // e.printStackTrace();
             // 日志打印
-            logger.error("异常信息为：" + e.getMessage());
+            logger.error("异常信息为：" + e);
         }
         try {
             if (conn != null) {
@@ -249,7 +249,7 @@ public class DatabaseUtils {
         } catch (Exception e) {
             // e.printStackTrace();
             // 日志打印
-            logger.error("异常信息为：" + e.getMessage());
+            logger.error("异常信息为：" + e);
         }
 
     }
