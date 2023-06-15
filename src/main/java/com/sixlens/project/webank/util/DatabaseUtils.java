@@ -53,9 +53,10 @@ public class DatabaseUtils {
             InputStream is = DatabaseUtils.class.getClassLoader().getResourceAsStream("dbcp.properties");
             props.load(is);
 
+            // 若此处使用druid连接池技术，存在bug
             dataSource = BasicDataSourceFactory.createDataSource(props);
         } catch (Exception e) {
-            logger.error("创建 druid 数据池失败， 报错信息为： {}", e.getMessage());
+            logger.error("创建 dbcp 数据池失败， 报错信息为： {}", e.getMessage());
             e.printStackTrace();
         }
     }
