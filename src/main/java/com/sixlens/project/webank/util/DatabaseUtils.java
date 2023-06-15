@@ -27,8 +27,6 @@ import java.util.stream.Collectors;
 public class DatabaseUtils {
 
     // 日志打印
-//    private static final Logger logger = (Logger) LoggerFactory.getLogger(DatabaseUtils.class);
-
     private static Logger logger = LoggerFactory.getLogger(DatabaseUtils.class);
 
     public static void main(String[] args) throws SQLException {

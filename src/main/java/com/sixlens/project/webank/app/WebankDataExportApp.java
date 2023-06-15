@@ -3,15 +3,12 @@ package com.sixlens.project.webank.app;
 
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
-import com.jcraft.jsch.JSchException;
-import com.jcraft.jsch.SftpException;
 import com.sixlens.project.webank.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.mail.MessagingException;
+
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -63,18 +60,6 @@ public class WebankDataExportApp {
         executorService.shutdown();
 
         try {
-            if (!executorService.awaitTermination(60, TimeUnit.MINUTES)) ;
-            {
-                executorService.shutdownNow();
-                logger.warn("线程池未正常关闭");
-            }
-        } catch (InterruptedException e) {
-            executorService.shutdownNow();
-            logger.warn("线程池关闭异常", e);
-        }
-
-
-        try {
             if (!executorService.awaitTermination(60, TimeUnit.MINUTES)) {
                 executorService.shutdownNow();
                 logger.warn("线程池未正常关闭");
@@ -83,7 +68,6 @@ public class WebankDataExportApp {
             executorService.shutdownNow();
             logger.warn("线程池关闭异常", e);
         }
-
 
 
         List<File> encryptedFiles = new ArrayList<>();
