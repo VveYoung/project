@@ -93,14 +93,6 @@
             <version>1.2.11</version>
         </dependency>
 
-
-        <!--        <dependency>-->
-        <!--            <groupId>log4j</groupId>-->
-        <!--            <artifactId>log4j</artifactId>-->
-        <!--            <version>1.2.17</version>-->
-        <!--        </dependency>-->
-
-
         <dependency>
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-all</artifactId>
@@ -113,6 +105,20 @@
             <artifactId>lombok</artifactId>
             <version>1.18.20</version>
             <scope>provided</scope>
+        </dependency>
+
+
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+            <version>4.9.3</version>
+        </dependency>
+
+
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>fastjson</artifactId>
+            <version>1.2.79</version>
         </dependency>
 
         <dependency>

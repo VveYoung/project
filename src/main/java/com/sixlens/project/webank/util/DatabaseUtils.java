@@ -2,7 +2,6 @@ package com.sixlens.project.webank.util;
 
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.StrUtil;
-//import com.alibaba.druid.pool.DruidDataSourceFactory;
 import lombok.SneakyThrows;
 import org.apache.commons.dbcp2.BasicDataSourceFactory;
 import org.slf4j.Logger;

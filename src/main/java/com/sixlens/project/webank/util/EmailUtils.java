@@ -1,6 +1,8 @@
 package com.sixlens.project.webank.util;
 
 import com.sixlens.project.webank.config.WebankConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.mail.*;
 import javax.mail.internet.InternetAddress;
@@ -9,7 +11,7 @@ import java.util.Properties;
 
 /**
  * @ClassName: EmailUtil
- * @Description: //TODO 用于发送导出结果的邮件通知
+ * @Description: //TODO 邮件工具类，用于发送导出结果的邮件通知
  * @Author: cwy
  * @Date: 2023/6/7 0007
  * @Version: 1.0
@@ -17,6 +19,21 @@ import java.util.Properties;
 
 public class EmailUtils {
 
+    private static Logger logger = LoggerFactory.getLogger(EmailUtils.class);
+
+
+    public static void main(String[] args) {
+        sendEmail("dsfa", "adfas");
+    }
+
+    /**
+     * @Description //TODO 发送邮件
+     * @Author cwy
+     * @Date 2023/6/16 0016
+     * @Param subject 邮件主题
+     * @Param body 邮件正文
+     * @return void
+     **/
     public static void sendEmail(String subject, String body) {
 
         Properties properties = new Properties();
@@ -32,6 +49,8 @@ public class EmailUtils {
             }
         });
 
+        session.setDebug(true); // 设置调式模式
+
         try {
             MimeMessage message = new MimeMessage(session);
             message.setFrom(new InternetAddress(WebankConfig.EMAIL_FROM));
@@ -41,6 +60,7 @@ public class EmailUtils {
 
             Transport.send(message);
         } catch (MessagingException e) {
+            logger.error("发送邮件失败: {}", e);
             e.printStackTrace();
         }
     }

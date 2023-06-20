@@ -1,5 +1,11 @@
 package com.sixlens.project.webank.config;
 
+import cn.hutool.core.date.DateUtil;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
+
 /**
  * @ClassName: WebankConfig
  * @Description: //TODO 
@@ -19,11 +25,12 @@ public class WebankConfig {
     public static final String SFTP_PASSWORD = "7TSVUUHVJPDQ42WF";
     public static final String SFTP_REMOTE_PATH = "/webank/data/";
 
-    public static final String EMAIL_SMTP_HOST = "smtp.example.com";
+    public static final String EMAIL_SMTP_HOST = "smtp.qq.com";
     public static final int EMAIL_SMTP_PORT = 587;
+
     public static final String EMAIL_FROM = "563244723@qq.com";
-    public static final String EMAIL_TO = "vveyoung@163.com";
     public static final String EMAIL_USERNAME = "563244723";
     public static final String EMAIL_PASSWORD = "Cwylove123";
 
+    public static final String EMAIL_TO = "vveyoung@163.com";
 }

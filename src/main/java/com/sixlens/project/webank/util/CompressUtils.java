@@ -1,5 +1,6 @@
 package com.sixlens.project.webank.util;
 
+import cn.hutool.core.io.FileUtil;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
@@ -10,9 +11,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @ClassName: CompressUtils
@@ -31,17 +37,23 @@ public class CompressUtils {
     // 用于记录日志信息
     private static Logger logger = LoggerFactory.getLogger(CompressUtils.class);
 
+    // 切割压缩包 1.8G
+    private static long SPLIT_SIZE = 1_843_200L;
 
-    public static void main(String[] args) {
 
-        File file1 = new File("D:\\data\\20230614\\encrypted_dwm_org_company_industry_hotfield.full.textfile");
+    public static void main(String[] args) throws IOException {
 
-        File file2 = new File("D:\\data\\20230614\\encrypted_tmp_cwy_dwm_org_company_industry_hotfield.full.textfile");
+//        File file1 = new File("D:\\data\\20230614\\encrypted_dwm_org_company_industry_hotfield.full.textfile");
+
+//        File file2 = new File("D:\\data\\20230614\\encrypted_tmp_cwy_dwm_org_company_industry_hotfield.full.textfile");
 
 //        compressFiles(new File[]{file1, file2}, "D:\\data\\20230614\\data.pkg.tar.gz");
 
+//        splitCompressedFile(args[0]);
 
-        decompressFile("D:\\data\\20230614\\data.pkg.tar.gz", "D:\\data\\20230614");
+        splitCompressedFile("C:\\Users\\Administrator\\Desktop\\Lunix\\data.20230618.pkg.tar.gz");
+
+//        decompressFile("D:\\data\\20230614\\data.pkg.tar.gz", "D:\\data\\20230614");
 
     }
 
@@ -51,14 +63,14 @@ public class CompressUtils {
      * @Author cwy
      * @Date 2023/6/14 0014
      * @Param sourceFiles 待压缩的文件数组
-     * @Param outputFileName 压缩后的文件名，包含路径
+     * @Param compressedFileName 压缩后的文件名，包含路径
      * @return void
      **/
-    public static void compressFiles(File[] sourceFiles, String outputFileName) {
+    public static void compressFiles(File[] sourceFiles, String compressedFileName) {
 
         try (
                 // 创建文件输出流，并将其包装在缓冲输出流中
-                FileOutputStream fos = new FileOutputStream(outputFileName);
+                FileOutputStream fos = new FileOutputStream(compressedFileName);
                 BufferedOutputStream bos = new BufferedOutputStream(fos);
                 // 创建Gzip压缩流，并将其包装在缓冲输出流中
                 GzipCompressorOutputStream gzipCompressorOutputStream = new GzipCompressorOutputStream(bos);
@@ -76,7 +88,40 @@ public class CompressUtils {
             e.printStackTrace();
         }
 
-        // splitFile(outputFileName, 1800 * 1024 * 1024); // 数据量很小，暂不考虑切分数据包，且切分数据包的代码还需进一步优化
+    }
+
+    /**
+     * @Description //TODO 压缩文件
+     * @Author cwy
+     * @Date 2023/6/14 0014
+     * @Param batchDate 日期，格式为 "yyyyMMdd"
+     * @Param compressedFileName 压缩后的文件名，包含路径
+     * @return void
+     **/
+    public static void compressFiles(String batchDate, String compressedFileName) {
+
+        File directory = new File("/data/cwy/webank/" + batchDate);
+        File[] sourceFiles = directory.listFiles((dir, name) -> name.startsWith("encrypted_"));
+
+        try (
+                // 创建文件输出流，并将其包装在缓冲输出流中
+                FileOutputStream fos = new FileOutputStream(compressedFileName);
+                BufferedOutputStream bos = new BufferedOutputStream(fos);
+                // 创建Gzip压缩流，并将其包装在缓冲输出流中
+                GzipCompressorOutputStream gzipCompressorOutputStream = new GzipCompressorOutputStream(bos);
+                // 创建Tar归档输出流
+                TarArchiveOutputStream tarArchiveOutputStream = new TarArchiveOutputStream(gzipCompressorOutputStream)) {
+
+            // 遍历待压缩的文件数组
+            for (File sourceFile : sourceFiles) {
+                // 向tar文件中添加文件或目录
+                addFileToTar(sourceFile, "", tarArchiveOutputStream);
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
 
@@ -121,40 +166,21 @@ public class CompressUtils {
 
     }
 
-    private static void splitFile(String inputFileName, long splitSize) {
 
-        // 根据原始文件名获取文件对象
-        File inputFile = new File(inputFileName);
-        // 获取文件长度
-        long inputFileSize = inputFile.length();
-
-        // 如果切分大小小于等于0或者原始文件长度小于等于切分大小，则直接返回
-        if (splitSize <= 0 || inputFileSize <= splitSize) {
-            return;
-        }
-
-
-        // 构造linux命令
-        String command = String.format("split -b %dM -d -a 3 %s %s",
-                (int) (splitSize / 1024 / 1024),
-                inputFileName,
-                inputFileName + "."
-        );
-
-        // 执行split命令进行切分
-        Process process = null;
-        try {
-            process = Runtime.getRuntime().exec(command);
-            process.waitFor();
-        } catch (IOException e) {
-            // e.printStackTrace();
-            logger.error("切分数据包，报错信息为：", e);
-        } catch (InterruptedException e) {
-            // e.printStackTrace();
-            logger.error("切分数据包，报错信息为：", e);
-        }
-
-
+    /**
+     * @Description //TODO 创建结束标记文件
+     * @Author cwy
+     * @Date 2023/6/14 0014
+     * @Param packageName 包名
+     * @Param outputDirectory 输出目录
+     * @Param date 日期
+     * @return void
+     **/
+    public static void createFinishFile(String packageName, String outputDirectory, String date) throws IOException {
+        // 构造结束标记文件名
+        String finishFileName = String.format("%s/%s_%s.finish", outputDirectory, packageName, date);
+        // 创建结束标记文件
+        Files.createFile(Paths.get(finishFileName));
     }
 
 
@@ -211,23 +237,6 @@ public class CompressUtils {
 
 
     /**
-     * @Description //TODO 创建结束标记文件
-     * @Author cwy
-     * @Date 2023/6/14 0014
-     * @Param packageName 包名
-     * @Param outputDirectory 输出目录
-     * @Param date 日期
-     * @return void
-     **/
-    public static void createFinishFile(String packageName, String outputDirectory, String date) throws IOException {
-        // 构造结束标记文件名
-        String finishFileName = String.format("%s/%s_%s.finish", outputDirectory, packageName, date);
-        // 创建结束标记文件
-        Files.createFile(Paths.get(finishFileName));
-    }
-
-
-    /**
      * @Description //TODO 切分文件
      * @Author cwy
      * @Date 2023/6/14 0014
@@ -235,50 +244,52 @@ public class CompressUtils {
      * @Param splitSize 切分大小
      * @return void
      **/
-    private static void splitFile01(String inputFileName, long splitSize) throws IOException {
-        // 根据原始文件名获取文件对象
-        File inputFile = new File(inputFileName);
-        // 获取文件长度
-        long inputFileSize = inputFile.length();
+    public static List<File> splitCompressedFile(String compressedFileName) {
 
-        // 如果切分大小小于等于 0 或者原始文件长度小于等于切分大小，则直接返回
-        if (splitSize <= 0 || inputFileSize <= splitSize) {
-            return;
-        }
+        List<File> splitFiles = new ArrayList<>();
+        long maxFileSize = 1800L * 1024 * 1024; // 1.8 GB
 
-        // 计算切分后的文件数量
-        int splitFileCount = (int) Math.ceil(inputFileSize * 1.0 / splitSize);
-        // 创建一个缓冲区，用于存储读取的数据
-        byte[] buffer = new byte[1024 * 1024];
-        // 创建一个输入流，用于读取原始文件数据
-        try (
-                FileInputStream fis = new FileInputStream(inputFile);
-                BufferedInputStream bis = new BufferedInputStream(fis)
-        ) {
-            // 逐个切分文件
-            for (int i = 0; i < splitFileCount; i++) {
-                // 构造切分文件名
-                String splitFileName = String.format("%s.%02d", inputFileName, i + 1);
-                // 创建一个输出流，用于写入切分后的数据
-                try (
-                        FileOutputStream fos = new FileOutputStream(splitFileName);
-                        BufferedOutputStream bos = new BufferedOutputStream(fos)
-                ) {
-                    // 计算切分文件的大小
-                    long splitFileSize = Math.min(splitSize, inputFileSize - i * splitSize);
-                    // 逐个读取数据并写入切分文件
-                    int readBytes;
-                    long remainSize = splitFileSize;
-                    while ((readBytes = bis.read(buffer, 0, (int) Math.min(buffer.length, remainSize))) != -1) {
-                        bos.write(buffer, 0, readBytes);
-                        remainSize -= readBytes;
-                        if (remainSize <= 0) {
-                            break;
-                        }
+        try {
+            // 获取压缩文件的路径和文件名
+            String[] fileNameParts = compressedFileName.split("/");
+            String filePath = compressedFileName.substring(0, compressedFileName.length() - fileNameParts[fileNameParts.length - 1].length());
+
+            // 获取压缩文件的大小
+            File compressedFile = new File(compressedFileName);
+            long compressedFileSize = compressedFile.length();
+
+            // 如果需要，进行文件切割
+            if (compressedFileSize > maxFileSize) {
+                // 计算需要切割的数量
+                int numSplits = (int) Math.ceil((double) compressedFileSize / maxFileSize);
+
+                // 使用Linux系统的split命令切割文件
+                ProcessBuilder pb = new ProcessBuilder("split", "-b", String.valueOf(maxFileSize), "-d", compressedFileName, fileNameParts[fileNameParts.length - 1] + ".");
+                pb.directory(new File(filePath));
+                Process p = pb.start();
+                p.waitFor();
+
+                // 获取切割后的文件列表
+                for (int i = 1; i < numSplits; i++) {
+                    String splitFileNumber = String.format("%03d", i);
+                    File splitFile = new File(filePath + fileNameParts[fileNameParts.length - 1] + "." + splitFileNumber);
+                    // System.out.println(splitFile.toString());
+                    // splitFiles.add(splitFile); // 添加包括原始的压缩文件和切割后的小压缩包
+
+                    if (splitFile.length() < maxFileSize) {
+                        splitFiles.add(splitFile);
                     }
+
                 }
+
+            } else {
+                splitFiles.add(compressedFile);
             }
+        } catch (IOException | InterruptedException e) {
+            logger.error("切割压缩文件报错 {}", e);
         }
+
+        return splitFiles;
     }
 
 }

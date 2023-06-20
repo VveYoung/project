@@ -1,16 +1,17 @@
 package com.sixlens.project.webank.app;
 
 
-import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.util.StrUtil;
 import com.sixlens.project.webank.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
 import java.io.File;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.concurrent.*;
 
@@ -26,20 +27,33 @@ public class WebankDataExportApp {
     // 日志打印
     private static Logger logger = LoggerFactory.getLogger(WebankDataExportApp.class);
 
+    // 邮件主题和正文
+    private static final String EMAIL_SUBJECT = "六棱镜大数据提供数据完成通知";
+    private static final String EMAIL_BODY_TEMPLATE = "尊敬的%s，\n\n" +
+            "本月数据源对接已经完成，以下是本次对接的数据包信息：\n\n" +
+            "数据包名：%s\n" +
+            "数据日期：%s\n" +
+            "数据包文件名：%s\n" +
+            "数据包内包含的数据文件：\n%s\n\n" +
+            "具体数据包交付方式请参考微众企同大数据外部数据源对接规范V1。\n\n" +
+            "如有疑问，请及时与我们联系。\n\n" +
+            "谢谢！\n\n" +
+            "此邮件是自动发送，请勿回复。";
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
 
-        Date date = new Date();
-        String batchDate = DateUtil.format(date, "yyyyMMdd");
+        LocalDate currentDate = LocalDate.now();
+        // 生成 T-1 日期
+        LocalDate previousDay = currentDate.minusDays(1);
+        String batchDate = previousDay.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+
+        String compressedFileName = "/data/cwy/webank/" + batchDate + "/data." + batchDate + ".pkg.tar.gz";
+        System.out.println(compressedFileName);
 
 
         // 获取到需要处理的表
         List<String> tablesToExport = DatabaseUtils.getTablesToExport();
-
-//        for (String table : tablesToExport) {
-//            System.out.println(table);
-//        }
-
 
         // int numberOfThreads = tablesToExport.size() > 0 ? tablesToExport.size() : 1;
         int numberOfThreads = Runtime.getRuntime().availableProcessors() * 2;
@@ -50,7 +64,6 @@ public class WebankDataExportApp {
         if (tablesToExport.size() == 0) {
             logger.info("没有需要处理的表");
         } else {
-
             for (String tableName : tablesToExport) {
                 futureList.add(executorService.submit(new TableProcessor(tableName, batchDate)));
             }
@@ -59,14 +72,17 @@ public class WebankDataExportApp {
 
         executorService.shutdown();
 
-        try {
-            if (!executorService.awaitTermination(60, TimeUnit.MINUTES)) {
+        boolean isTerminated = false;
+        while (!isTerminated) {
+            try {
+                isTerminated = executorService.awaitTermination(30, TimeUnit.MINUTES);
+                if (!isTerminated) {
+                    logger.info("线程池尚未关闭，等待更长时间");
+                }
+            } catch (InterruptedException e) {
                 executorService.shutdownNow();
-                logger.warn("线程池未正常关闭");
+                logger.warn("线程池关闭异常", e);
             }
-        } catch (InterruptedException e) {
-            executorService.shutdownNow();
-            logger.warn("线程池关闭异常", e);
         }
 
 
@@ -79,21 +95,32 @@ public class WebankDataExportApp {
             }
         }
 
-        String compressedFileName = "/data/cwy/" + batchDate + "/data." + batchDate + ".pkg.tar.gz";
         CompressUtils.compressFiles(encryptedFiles.toArray(new File[0]), compressedFileName);
+        CompressUtils.compressFiles(batchDate, compressedFileName); // 之前转换、加密操作都正常执行完成，测试可直接使用该方法
 
-        File compressedTableFile = new File(compressedFileName);
+        logger.info("将加密文件压缩在一起~");
+
+        // 将压缩后的文件切割成1.8G大小的文件，待实现逻辑
+        List<File> splitFiles = CompressUtils.splitCompressedFile(compressedFileName);
+        logger.info("将压缩文件切割为 {} 个小文件", splitFiles.size());
+
+        // 上传切割后的文件到 SFTP 服务器上
         String remotePath = "/files/" + batchDate;
-
-        SftpUtils.uploadFile(compressedTableFile, remotePath);
-        logger.info("批次 {} 上传至sftp成功", batchDate);
+        for (File file : splitFiles) {
+            SftpUtils.uploadFile(file, remotePath);
+            logger.info("文件 {} 上传至sftp成功", file.getName());
+        }
 
         String finishFileName = "data." + batchDate + ".finish";
         File finishFile = FileUtil.touch(finishFileName);
         SftpUtils.uploadFile(finishFile, remotePath);
+        logger.info("批次 {} 上传至sftp成功", batchDate);
 
-        EmailUtils.sendNotificationEmail(batchDate);
+        // 构造邮件正文
+        EmailUtils.sendEmail(EMAIL_SUBJECT, EMAIL_BODY_TEMPLATE);
         logger.info("提醒邮件发送成功");
+
+        DingDingUtils.sendDing(StrUtil.format("微众银行数据 {} 批次提供完成", batchDate));
     }
 
     static class TableProcessor implements Callable<File> {
@@ -108,7 +135,7 @@ public class WebankDataExportApp {
 
 
         /**
-         * @Description //TODO 将这些加密文件收集到一个列表中
+         * @Description //TODO 将这些经过数据转换加密后文件收集到一个列表中
          * @Author cwy
          * @Date 2023/6/15 0015
          * @Param
@@ -134,6 +161,10 @@ public class WebankDataExportApp {
                 }
             } catch (Exception e) {
                 logger.error("处理表 {} 时出现异常", tableName, e);
+            }
+
+            if (encryptedTableFile == null) {
+                logger.warn("加密表 {} 的文件为null，跳过此文件", tableName);
             }
             return encryptedTableFile;
         }

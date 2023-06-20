@@ -31,7 +31,7 @@ public class ExportUtils {
 
 
     /**
-     * @Description: 将指定的数据库表导出为textfile文件，采用分页技术防止内存溢出
+     * @Description: 将指定的数据库表导出为 textfile 文件，采用分页技术防止内存溢出
      * @Author: cwy
      * @Date: 2023/6/13 0013
      * @Param: [tableName, currentDate]

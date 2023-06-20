@@ -48,7 +48,6 @@ public class EncryptUtils {
      * @Description //TODO 生成密钥的方法
      * @Author cwy
      * @Date 2023/6/12 0012
-     * @Param [keySize]
      * @return byte[]
      **/
     public static byte[] generateKey() {
@@ -70,8 +69,9 @@ public class EncryptUtils {
     /**
      * @Description //TODO 生成 Cipher 对象
      * @Author cwy
-     * @Date 2023/6/12 0012
-     * @Param [mode, keyData] 加密或解密模式   密钥数据
+     * @Date 2023/6/19 0019
+     * @Param mode
+     * @Param keyData
      * @return javax.crypto.Cipher
      **/
     public static Cipher generateCipher(int mode, byte[] keyData) {
