@@ -46,7 +46,6 @@ public class DatabaseUtils {
     static {
         try {
             Properties props = new Properties();
-            // props.load(new FileInputStream("src/main/resources/druid.properties"));
             InputStream is = DatabaseUtils.class.getClassLoader().getResourceAsStream("dbcp.properties");
             props.load(is);
 
