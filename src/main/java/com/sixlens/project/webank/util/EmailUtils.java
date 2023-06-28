@@ -40,7 +40,7 @@ public class EmailUtils {
         properties.put("mail.smtp.host", WebankConfig.EMAIL_SMTP_HOST);
         properties.put("mail.smtp.port", WebankConfig.EMAIL_SMTP_PORT);  // 根据您的邮件服务器设置
         properties.put("mail.smtp.auth", "true");
-        properties.put("mail.smtp.starttls.enable", "true");
+        // properties.put("mail.smtp.starttls.enable", "true");
 
         Session session = Session.getInstance(properties, new Authenticator() {
             @Override
@@ -49,7 +49,7 @@ public class EmailUtils {
             }
         });
 
-        session.setDebug(true); // 设置调式模式
+        // session.setDebug(true); // 设置调式模式
 
         try {
             MimeMessage message = new MimeMessage(session);
@@ -59,32 +59,12 @@ public class EmailUtils {
             message.setText(body);
 
             Transport.send(message);
+
+            logger.info("提醒邮件发送成功");
+
         } catch (MessagingException e) {
             logger.error("发送邮件失败: {}", e);
-            e.printStackTrace();
+            // e.printStackTrace();
         }
-    }
-
-    public static void sendNotificationEmail(String batch) throws MessagingException {
-        Properties properties = new Properties();
-        properties.put("mail.smtp.auth", "true");
-        properties.put("mail.smtp.starttls.enable", "true");
-        properties.put("mail.smtp.host", WebankConfig.EMAIL_SMTP_HOST);
-        properties.put("mail.smtp.port", "587");
-
-        Session session = Session.getInstance(properties, new Authenticator() {
-            @Override
-            protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication(WebankConfig.EMAIL_USERNAME, WebankConfig.EMAIL_PASSWORD);
-            }
-        });
-
-        Message message = new MimeMessage(session);
-        message.setFrom(new InternetAddress(WebankConfig.EMAIL_FROM));
-        message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(WebankConfig.EMAIL_TO));
-        message.setSubject("提供数据批次: " + batch);
-        message.setText("数据批次 " + batch + " 已经上传完成。");
-
-        Transport.send(message);
     }
 }

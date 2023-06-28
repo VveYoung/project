@@ -160,11 +160,12 @@ public class EncryptUtils {
 //        encryptFile(keyData, oriFile, encryFile);
 //        decryptFile(keyData, encryFile, decryFile);
 
-        decryptFile("D:\\data\\20230614\\encrypted_dwm_org_company_industry_hotfield.full.textfile",
-                "D:\\data\\20230614\\decrypted_dwm_org_company_industry_hotfield.full.textfile"
-        );
-        decryptFile("D:\\data\\20230614\\encrypted_tmp_cwy_dwm_org_company_industry_hotfield.full.textfile",
-                "D:\\data\\20230614\\decrypted_tmp_cwy_dwm_org_company_industry_hotfield.full.textfile"
+//        decryptFile("D:\\data\\20230614\\encrypted_tmp_cwy_dwm_org_company_industry_hotfield.full.textfile",
+//                "D:\\data\\20230614\\decrypted_tmp_cwy_dwm_org_company_industry_hotfield.full.textfile"
+//        );
+
+        decryptFile("C:\\Users\\Administrator\\Desktop\\Lunix\\encrypted_dwm_org_company_industry_hotfield.full.textfile",
+                "C:\\Users\\Administrator\\Desktop\\Lunix\\decrypted_dwm_org_company_industry_hotfield.full.textfile"
         );
 
     }

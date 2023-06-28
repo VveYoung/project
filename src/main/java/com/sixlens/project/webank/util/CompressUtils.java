@@ -51,9 +51,16 @@ public class CompressUtils {
 
 //        splitCompressedFile(args[0]);
 
-        splitCompressedFile("C:\\Users\\Administrator\\Desktop\\Lunix\\data.20230618.pkg.tar.gz");
+//        splitCompressedFile("C:\\Users\\Administrator\\Desktop\\Lunix\\data.20230618.pkg.tar.gz");
 
 //        decompressFile("D:\\data\\20230614\\data.pkg.tar.gz", "D:\\data\\20230614");
+
+
+        for (int i = 1; i < 3; i++) {
+
+            String splitFileNumber = String.format("%03d", i);
+            System.out.println(splitFileNumber);
+        }
 
     }
 
@@ -117,6 +124,9 @@ public class CompressUtils {
                 // 向tar文件中添加文件或目录
                 addFileToTar(sourceFile, "", tarArchiveOutputStream);
             }
+
+            logger.info("将加密文件压缩在一起~");
+
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -264,23 +274,23 @@ public class CompressUtils {
                 int numSplits = (int) Math.ceil((double) compressedFileSize / maxFileSize);
 
                 // 使用Linux系统的split命令切割文件
-                ProcessBuilder pb = new ProcessBuilder("split", "-b", String.valueOf(maxFileSize), "-d", compressedFileName, fileNameParts[fileNameParts.length - 1] + ".");
+                ProcessBuilder pb = new ProcessBuilder("split", "-b", String.valueOf(maxFileSize), "-d", "-a", "3", compressedFileName, fileNameParts[fileNameParts.length - 1]);
                 pb.directory(new File(filePath));
                 Process p = pb.start();
                 p.waitFor();
 
                 // 获取切割后的文件列表
-                for (int i = 1; i < numSplits; i++) {
+                for (int i = 0; i < numSplits; i++) {
                     String splitFileNumber = String.format("%03d", i);
-                    File splitFile = new File(filePath + fileNameParts[fileNameParts.length - 1] + "." + splitFileNumber);
+                    File splitFile = new File(filePath + fileNameParts[fileNameParts.length - 1] + splitFileNumber);
                     // System.out.println(splitFile.toString());
-                    // splitFiles.add(splitFile); // 添加包括原始的压缩文件和切割后的小压缩包
-
-                    if (splitFile.length() < maxFileSize) {
-                        splitFiles.add(splitFile);
-                    }
-
+                    splitFiles.add(splitFile); // 添加包括原始的压缩文件和切割后的小压缩包
+//                    if (splitFile.length() <= maxFileSize) {
+//                        splitFiles.add(splitFile);
+//                    }
                 }
+
+                logger.info("将压缩文件切割为 {} 个小文件", splitFiles.size());
 
             } else {
                 splitFiles.add(compressedFile);

@@ -85,7 +85,6 @@ public class WebankDataExportApp {
             }
         }
 
-
         List<File> encryptedFiles = new ArrayList<>();
         for (Future<File> future : futureList) {
             try {
@@ -95,32 +94,26 @@ public class WebankDataExportApp {
             }
         }
 
-        CompressUtils.compressFiles(encryptedFiles.toArray(new File[0]), compressedFileName);
-        CompressUtils.compressFiles(batchDate, compressedFileName); // 之前转换、加密操作都正常执行完成，测试可直接使用该方法
-
-        logger.info("将加密文件压缩在一起~");
+        // CompressUtils.compressFiles(encryptedFiles.toArray(new File[0]), compressedFileName);
+        CompressUtils.compressFiles(batchDate, compressedFileName); // 之前转换、加密操作都正常执行完成，可直接使用该方法
 
         // 将压缩后的文件切割成1.8G大小的文件，待实现逻辑
         List<File> splitFiles = CompressUtils.splitCompressedFile(compressedFileName);
-        logger.info("将压缩文件切割为 {} 个小文件", splitFiles.size());
 
         // 上传切割后的文件到 SFTP 服务器上
         String remotePath = "/files/" + batchDate;
         for (File file : splitFiles) {
             SftpUtils.uploadFile(file, remotePath);
-            logger.info("文件 {} 上传至sftp成功", file.getName());
         }
 
-        String finishFileName = "data." + batchDate + ".finish";
+        String finishFileName = "/data/cwy/webank/" + batchDate + "/data." + batchDate + ".finish";
         File finishFile = FileUtil.touch(finishFileName);
         SftpUtils.uploadFile(finishFile, remotePath);
-        logger.info("批次 {} 上传至sftp成功", batchDate);
 
         // 构造邮件正文
         EmailUtils.sendEmail(EMAIL_SUBJECT, EMAIL_BODY_TEMPLATE);
-        logger.info("提醒邮件发送成功");
 
-        DingDingUtils.sendDing(StrUtil.format("微众银行数据 {} 批次提供完成", batchDate));
+        DingDingUtils.sendDing(StrUtil.format("微众银行 {} 批次数据提供完成流程结束", batchDate));
     }
 
     static class TableProcessor implements Callable<File> {

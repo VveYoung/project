@@ -12,6 +12,7 @@
 
     <!-- 文件输出日志的配置 -->
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!-- 被写入的文件名，可以是相对目录，也可以是绝对目录，如果上级目录不存在会自动创建，没有默认值 -->
         <file>${LOG_PATH}/webankdataexportapp.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <!-- 每天滚动日志文件 -->
