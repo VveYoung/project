@@ -101,7 +101,7 @@ public class WebankDataExportApp {
         List<File> splitFiles = CompressUtils.splitCompressedFile(compressedFileName);
 
         // 上传切割后的文件到 SFTP 服务器上
-        String remotePath = "/files/" + batchDate;
+        String remotePath = "/file/" + batchDate;
         for (File file : splitFiles) {
             SftpUtils.uploadFile(file, remotePath);
         }
