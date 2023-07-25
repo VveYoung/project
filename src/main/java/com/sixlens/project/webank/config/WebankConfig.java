@@ -16,14 +16,11 @@ import java.util.Date;
 public class WebankConfig {
 
     public static final String LINUX_DATA_PATH = "/data/cwy/webank/";
-//    public static final String LINUX_DATA_PATH = "D:\\data";
-
 
     public static final String SFTP_IP = "171.34.174.207";
     public static final int SFTP_PORT = 9022;
     public static final String SFTP_USERNAME = "liulengjing";
     public static final String SFTP_PASSWORD = "Addmin123";
-    // public static final String SFTP_REMOTE_PATH = "/webank/data/";
 
     public static final String EMAIL_SMTP_HOST = "smtp.qq.com";
     public static final int EMAIL_SMTP_PORT = 25; // 若smtp未加密填25，若采用starttls加密填587，若采用ssl加密填465
