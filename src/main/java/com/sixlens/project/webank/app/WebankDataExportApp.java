@@ -29,11 +29,10 @@ public class WebankDataExportApp {
 
     // 邮件主题和正文
     private static final String EMAIL_SUBJECT = "六棱镜大数据提供数据完成通知";
-    private static final String EMAIL_BODY_TEMPLATE = "尊敬的%s，\n\n" +
+    private static final String EMAIL_BODY_TEMPLATE = "尊敬的微众银行相关负责人，\n\n" +
             "本月数据源对接已经完成，以下是本次对接的数据包信息：\n\n" +
             "数据包名：%s\n" +
             "数据日期：%s\n" +
-            "数据包文件名：%s\n" +
             "数据包内包含的数据文件：\n%s\n\n" +
             "具体数据包交付方式请参考微众企同大数据外部数据源对接规范V1。\n\n" +
             "如有疑问，请及时与我们联系。\n\n" +
@@ -49,7 +48,7 @@ public class WebankDataExportApp {
 
 
         String compressedFileName = "/data/cwy/webank/" + batchDate + "/data." + batchDate + ".pkg.tar.gz";
-        System.out.println(compressedFileName);
+        // System.out.println(compressedFileName);
 
 
         // 获取到需要处理的表
@@ -111,7 +110,20 @@ public class WebankDataExportApp {
         SftpUtils.uploadFile(finishFile, remotePath);
 
         // 构造邮件正文
-        EmailUtils.sendEmail(EMAIL_SUBJECT, EMAIL_BODY_TEMPLATE);
+        // 构造数据包名
+        String dataPackageName = "data." + batchDate + ".pkg.tar.gz";
+        // 构造数据日期
+        String dataDate = batchDate;
+        // 构造数据包内包含的数据文件名
+        // 这里假设你的 encryptedFiles 列表中的每个文件都应该被包含在邮件正文中
+        StringBuilder dataFileNames = new StringBuilder();
+        for (File encryptedFile : encryptedFiles) {
+            dataFileNames.append(encryptedFile.getName()).append("\n");
+        }
+        // 构造邮件正文
+        String emailBody = String.format(EMAIL_BODY_TEMPLATE, dataPackageName, dataDate, dataPackageName, dataFileNames);
+        // 发送邮件
+        EmailUtils.sendEmail(EMAIL_SUBJECT, emailBody);
 
         DingDingUtils.sendDing(StrUtil.format("微众银行 {} 批次数据提供完成流程结束", batchDate));
     }
@@ -135,15 +147,69 @@ public class WebankDataExportApp {
          * @return java.io.File
          **/
         @Override
-        public File call() throws Exception {
+        public File call() {
+
+            /*File encryptedTableFile = null;
+            try {
+                if (DatabaseUtils.ifTableExist(tableName)) {
+                    String tableStatus = DatabaseUtils.getTableStatus(tableName);
+                    File tableFile = null;
+
+                    if ("mysql".equals(tableStatus)) {
+                        logger.info("开始转换表 {} 到 textfile 文件", tableName);
+                        tableFile = ExportUtils.exportTableToTextFile(tableName, batchDate);
+
+                        DatabaseUtils.updateTableStatus(tableName, "textfile");
+                        tableStatus = DatabaseUtils.getTableStatus(tableName);  // 获取更新后的状态
+                        logger.info("表 {} 已转换到 textfile 文件", tableName);
+                    } else {
+                        // 如果表已经转换到 textfile 文件，直接读取该文件
+                        String textfilePath = "/data/cwy/webank/" + batchDate + "/" + tableName + ".full.textfile";
+                        tableFile = new File(textfilePath);
+                        if (!tableFile.exists()) {
+                            logger.warn("表 {} 的 textfile 文件 {} 不存在", tableName, textfilePath);
+                        }
+                    }
+
+                    if ("textfile".equals(tableStatus)) {
+                        logger.info("开始加密表 {}", tableName);
+                        String encryptedFilePath = tableFile.getParent() + File.separator + tableFile.getName();
+                        encryptedTableFile = EncryptUtils.encryptFile(tableFile.getAbsolutePath(), encryptedFilePath);
+
+                        DatabaseUtils.updateTableStatus(tableName, "encrypted");
+                        tableStatus = DatabaseUtils.getTableStatus(tableName);  // 获取更新后的状态
+                        logger.info("表 {} 已加密", tableName);
+                    } else {
+                        // 如果表已经加密，直接读取加密后的文件1
+                        String encryptedFilePath = "/data/cwy/webank/" + batchDate + "/encrypted_" + tableName + ".full.textfile";
+                        encryptedTableFile = new File(encryptedFilePath);
+                        logger.info(encryptedTableFile.getAbsolutePath());
+                    }
+
+                } else {
+                    logger.warn("表 {} 并不真实存在于(129) Mysql 的dw数据库", tableName);
+                }
+            } catch (Throwable t) {
+                logger.error("处理表 {} 时出现错误", tableName, t.getMessage());
+            }
+
+            if (encryptedTableFile == null) {
+                logger.warn("加密表 {} 的文件为null，跳过此文件", tableName);
+            }
+            return encryptedTableFile;
+        }*/
 
             File encryptedTableFile = null;
             try {
                 if (DatabaseUtils.ifTableExist(tableName)) {
-                    logger.info("被处理的表为： {}", tableName);
+                    logger.info("开始转换表 {} 到 textfile 文件", tableName);
                     File tableFile = ExportUtils.exportTableToTextFile(tableName, batchDate);
+                    logger.info("表 {} 已经转换完成到 textfile 文件", tableName);
+
 
                     String encryptedFilePath = tableFile.getParent() + File.separator + "encrypted_" + tableFile.getName();
+
+                    logger.info("开始加密表 {}", tableName);
                     encryptedTableFile = EncryptUtils.encryptFile(tableFile.getAbsolutePath(), encryptedFilePath);
                     logger.info("被加密的表为： {}", tableName);
 

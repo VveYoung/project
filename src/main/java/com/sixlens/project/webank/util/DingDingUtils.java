@@ -22,7 +22,7 @@ public class DingDingUtils {
     private static Logger logger = LoggerFactory.getLogger(DingDingUtils.class);
 
     public static final String SIXLENS_DINGDING_WEBHOOK_URL = "https://oapi.dingtalk.com/robot/send?access_token=519c3c41cda378b0db334bdee9ae7f0903765d5bd1b00f8573c8b36b79cab551";
-    public static final String CWY_DINGDING_WEBHOOK_URL = "https://oapi.dingtalk.com/robot/send?access_token=4abefb411527668e359fdaffc3f7a2b44de3a90502898289a1693313ce95eeb4";
+    // public static final String CWY_DINGDING_WEBHOOK_URL = "https://oapi.dingtalk.com/robot/send?access_token=4abefb411527668e359fdaffc3f7a2b44de3a90502898289a1693313ce95eeb4";
 
 
     public static void sendDing(String message) {
@@ -38,7 +38,7 @@ public class DingDingUtils {
 
         RequestBody body = RequestBody.create(mediaType, json.toJSONString());
         Request request = new Request.Builder()
-                .url(CWY_DINGDING_WEBHOOK_URL)
+                .url(SIXLENS_DINGDING_WEBHOOK_URL)
                 .post(body)
                 .build();
 

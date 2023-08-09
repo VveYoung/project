@@ -9,6 +9,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.*;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * @ClassName: ExportUtils
@@ -27,7 +29,7 @@ public class ExportUtils {
     private static final String LINE_SEPARATOR = "\n";
 
     // 分页查询的每页大小
-    private static final int PAGE_SIZE = 80000;
+    private static final int PAGE_SIZE = 200000;
 
 
     /**
@@ -63,6 +65,24 @@ public class ExportUtils {
         if (outputFile.exists()) {
             outputFile.delete();
         }
+
+        // 筛选需要的表字段
+        String fieldsString = "id";
+        String dwmOrgCompanyIndustryHotfieldStr = String.join(",", Arrays.asList("org_id", "org_name", "hotfield_code", "hotfield_name", "hotfield_pr_level"));
+        String dwmOrgCompanyIndustryIpcLocStr  = String.join(",", Arrays.asList("org_id", "org_name", "ipc_group_loc_class",
+                "ipc_group_loc_class_name_std", "org_ipc_loc_appl_pat_count", "ipc_loc_org_count", "ipc_loc_pat_count",
+                "org_ipc_loc_appl_pat_count_rank", "org_ipc_loc_appl_pat_count_rank_total", "org_ipc_loc_appl_pat_count_ratio"));
+        String dwmOrgCnSeiStr = String.join(",", Arrays.asList("org_id", "org_name", "sei_level", "sei_code", "sei_name",
+                "sei_public_pat_count", "sei_pr_level"));
+
+        if ("pj_webank_dwm_org_cn_sei".equals(tableName)) {
+            fieldsString = dwmOrgCnSeiStr;
+        } else if ("pj_webank_dwm_org_company_industry_hotfield".equals(tableName)) {
+            fieldsString = dwmOrgCompanyIndustryHotfieldStr;
+        } else if ("pj_webank_dwm_org_company_industry_ipc_loc".equals(tableName)) {
+            fieldsString = dwmOrgCompanyIndustryIpcLocStr;
+        }
+
         FileWriter fw = null;
         BufferedWriter bw = null;
 
@@ -75,7 +95,8 @@ public class ExportUtils {
             boolean hasMoreDate = true;
             while (hasMoreDate) {
                 // 构造分页查询SQL
-                String sql = "SELECT * FROM `" + tableName + "` LIMIT ?,?;";
+
+                String sql = "SELECT " + fieldsString + " FROM `" + tableName + "` LIMIT ?,?;";
                 PreparedStatement ps = null;
                 ResultSet rs = null;
 

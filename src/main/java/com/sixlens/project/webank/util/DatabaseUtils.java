@@ -30,14 +30,18 @@ public class DatabaseUtils {
 
     public static void main(String[] args) throws SQLException {
 
-        System.out.println(getConnection());
+//        System.out.println(getConnection());
+//
+//        List<String> tablesToExport = getTablesToExport();
+//
+//        for (String table : tablesToExport) {
+//            System.out.println(table);
+//            ifTableExist(table);
+//        }
 
-        List<String> tablesToExport = getTablesToExport();
+        String dwm_org_cn_sei = getTableStatus("pj_webank_dwm_org_cn_sei");
 
-        for (String table : tablesToExport) {
-            System.out.println(table);
-            ifTableExist(table);
-        }
+        System.out.println(dwm_org_cn_sei);
 
     }
 
@@ -88,7 +92,7 @@ public class DatabaseUtils {
 
         List<String> tablesToExport = new ArrayList<>();
 
-        String sql = "SELECT table_name FROM tmp_cwy_table_export_log WHERE bank_status IS NULL ;";
+        String sql = "SELECT table_name FROM pj_webank_table_export_log WHERE bank_status IS NULL ;";
 
         Connection conn = getConnection();
 
@@ -106,10 +110,9 @@ public class DatabaseUtils {
 
             tablesToExport = tablesToExport.stream().filter(table -> {
                 // 目前只提供该三张表
-                return table.matches("tmp_cwy_dwm_org_company_industry_hotfield") ||
-                        table.matches("dwm_org_company_industry_hotfield") ||
-                        table.matches("dwm_org_company_industry_ipc_loc") ||
-                        table.matches("dwm_org_cn_sei");
+                return table.matches("pj_webank_dwm_org_company_industry_hotfield") ||
+                        table.matches("pj_webank_dwm_org_company_industry_ipc_loc") ||
+                        table.matches("pj_webank_dwm_org_cn_sei");
 
             }).collect(Collectors.toList());
 
@@ -130,13 +133,46 @@ public class DatabaseUtils {
      * @return void
      **/
     public static void updateExportLogTaskStatus(String tableName) {
-        String sql = StrUtil.format("UPDATE tmp_cwy_table_export_log SET bank_status='1', " +
+        String sql = StrUtil.format("UPDATE pj_webank_table_export_log SET bank_status='1', " +
                         "bank_time=current_timestamp, bank_batch={} WHERE table_name='{}' ",
                 DateUtil.format(new Date(), "yyyyMMdd"),
                 tableName
         );
         execute(sql);
     }
+
+    public static String getTableStatus(String tableName) {
+
+        String sql = StrUtil.format("SELECT table_status FROM pj_webank_table_export_log WHERE table_name = '{}' ;", tableName);
+
+        String status = null;
+        Connection conn = getConnection();
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+
+        try {
+            ps = conn.prepareStatement(sql);
+            rs = ps.executeQuery();
+            if (rs.next()) {
+                status = rs.getString("table_status");
+            }
+        } catch (Exception e) {
+            logger.error("错误sql {} {} 。", sql, e);
+        } finally {
+            release(conn, ps, rs);
+        }
+
+        return status;
+    }
+
+
+    public static void updateTableStatus(String tableName, String tableStatus) {
+        String sql = StrUtil.format("UPDATE pj_webank_table_export_log SET table_status='{}' WHERE table_name='{}' ",
+                tableStatus, tableName
+        );
+        execute(sql);
+    }
+
 
     @SneakyThrows
     private static void execute(String sql) {
@@ -249,5 +285,6 @@ public class DatabaseUtils {
         }
 
     }
+
 
 }

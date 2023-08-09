@@ -21,6 +21,11 @@ public class SftpUtils {
 
     private static Logger logger = LoggerFactory.getLogger(SftpUtils.class);
 
+    public static void main(String[] args) {
+
+        System.out.println(getSftpChannel());
+    }
+
     /**
      * @Description //TODO 获取SFTP通道
      * @Author cwy

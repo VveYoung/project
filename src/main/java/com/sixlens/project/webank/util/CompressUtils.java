@@ -23,7 +23,7 @@ import java.util.List;
  *                      2. 当使用 splitFile 方法切分文件时，需要保证切分大小 splitSize 大于 0。
  *                      3. 当使用 createFinishFile 方法创建结束标记文件时，需要保证 outputDirectory 目录已存在。
  * @Author: cwy
- * @Date: 2023/6/12 0012 
+ * @Date: 2023/6/12 0012
  * @Version: 1.0
  */
 
@@ -105,6 +105,10 @@ public class CompressUtils {
 
         File directory = new File("/data/cwy/webank/" + batchDate);
         File[] sourceFiles = directory.listFiles((dir, name) -> name.startsWith("encrypted_"));
+
+        for (File sourceFile : sourceFiles) {
+            System.out.println(sourceFile.getAbsolutePath());
+        }
 
         try (
                 // 创建文件输出流，并将其包装在缓冲输出流中

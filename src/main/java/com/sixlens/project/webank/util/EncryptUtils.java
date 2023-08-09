@@ -98,7 +98,8 @@ public class EncryptUtils {
 
         File file = null;
         try {
-            Cipher cipher = generateCipher(Cipher.ENCRYPT_MODE, KEY);
+
+            /*Cipher cipher = generateCipher(Cipher.ENCRYPT_MODE, KEY);
             CipherInputStream cipherInputStream = new CipherInputStream(new FileInputStream(sourchPath), cipher);
 
             File targetFile = new File(targetPath);
@@ -108,7 +109,32 @@ public class EncryptUtils {
 
             file = FileUtil.writeFromStream(cipherInputStream, targetPath);
 
-            IoUtil.close(cipherInputStream);
+            IoUtil.close(cipherInputStream);*/
+
+            Cipher cipher = generateCipher(Cipher.ENCRYPT_MODE, KEY);
+            FileInputStream fis = new FileInputStream(sourchPath);
+            File targetFile = new File(targetPath);
+            if (targetFile.exists()) {
+                targetFile.delete();
+            }
+            FileOutputStream fos = new FileOutputStream(targetPath);
+            byte[] buffer = new byte[500 * 1024 * 1024]; // 500MB
+            int bytesRead;
+            while ((bytesRead = fis.read(buffer)) != -1) {
+                byte[] output = cipher.update(buffer, 0, bytesRead);
+                if (output != null) {
+                    fos.write(output);
+                }
+            }
+            byte[] output = cipher.doFinal();
+            if (output != null) {
+                fos.write(output);
+            }
+            file = targetFile;
+            fis.close();
+            fos.flush();
+            fos.close();
+
         } catch (Exception e) {
             logger.error("加密文件时，报错信息为：" + e);
         }
@@ -130,42 +156,38 @@ public class EncryptUtils {
         CipherOutputStream cipherOutputStream = null;
         try {
             in = new FileInputStream(sourcePath);
-            byte[] bytes = IoUtil.readBytes(in);
-            byteArrayInputStream = IoUtil.toStream(bytes);
             Cipher cipher = generateCipher(Cipher.DECRYPT_MODE, KEY);
             out = new FileOutputStream(targetPath);
             cipherOutputStream = new CipherOutputStream(out, cipher);
-            IoUtil.copy(byteArrayInputStream, cipherOutputStream);
+
+            byte[] buffer = new byte[20 * 1024 * 1024]; // 20MB
+            int bytesRead;
+            while ((bytesRead = in.read(buffer)) != -1) {
+                cipherOutputStream.write(buffer, 0, bytesRead);
+            }
+
         } catch (Exception e) {
-            // e.printStackTrace();
             logger.error("解密文件时，报错信息为： {}", e);
         } finally {
             IoUtil.close(cipherOutputStream);
             IoUtil.close(out);
-            IoUtil.close(byteArrayInputStream);
             IoUtil.close(in);
         }
     }
 
-    public static void main(String[] args) throws Exception {
-//        String oriFile = "D:\\data\\cwy.docx";
-//        String encryFile = "D:\\data\\cwy加密文件.docx";
-//        String decryFile = "D:\\data\\cwy解密文件.docx";
+    public static void main(String[] args) {
 
 //        byte[] bytes = generateKey();
 //        String key = ByteUtils.toHexString(bytes);
 //        System.out.println("密钥： " + key); // b5f62f117e6424c1808f2217680c2bcd
-
-//        byte[] keyData = ByteUtils.fromHexString(key);
-//        encryptFile(keyData, oriFile, encryFile);
-//        decryptFile(keyData, encryFile, decryFile);
-
-//        decryptFile("D:\\data\\20230614\\encrypted_tmp_cwy_dwm_org_company_industry_hotfield.full.textfile",
-//                "D:\\data\\20230614\\decrypted_tmp_cwy_dwm_org_company_industry_hotfield.full.textfile"
+//        decryptFile("C:\\Users\\Administrator\\Desktop\\Lunix\\job\\encrypted_dwm_org_cn_sei.full.textfile",
+//                "C:\\Users\\Administrator\\Desktop\\Lunix\\job\\decrypted_dwm_org_cn_sei.full.textfile"
 //        );
-
-        decryptFile("C:\\Users\\Administrator\\Desktop\\Lunix\\encrypted_dwm_org_company_industry_hotfield.full.textfile",
-                "C:\\Users\\Administrator\\Desktop\\Lunix\\decrypted_dwm_org_company_industry_hotfield.full.textfile"
+//        decryptFile("C:\\Users\\Administrator\\Desktop\\Lunix\\job\\encrypted_dwm_org_company_industry_hotfield.full.textfile",
+//                "C:\\Users\\Administrator\\Desktop\\Lunix\\job\\decrypted_dwm_org_company_industry_hotfield.full.textfile"
+//        );
+        decryptFile("C:\\Users\\Administrator\\Desktop\\Lunix\\job\\encrypted_dwm_org_company_industry_ipc_loc.full.textfile",
+                "C:\\Users\\Administrator\\Desktop\\Lunix\\job\\decrypted_dwm_org_company_industry_ipc_loc.full.textfile"
         );
 
     }
